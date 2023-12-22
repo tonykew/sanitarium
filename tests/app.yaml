@@ -329,3 +329,31 @@ mathematica:
       result:
         regex:  '2.718281828459045'
         action: 'store_true'
+
+#-------------------------------------------------------------------
+# CP2K Benchmark Tests
+#-------------------------------------------------------------------
+cp2k:
+  summary: CP2K bennchmark tests
+  schedule:
+    nodes: 1
+    slurm:
+      sbatch_extra: ['--exclusive']
+      mpi_cmd: srun
+  run:
+    env:
+      I_MPI_PMI_LIBRARY: /opt/software/slurm/lib64/libpmi.so
+      I_MPI_DEBUG: 4
+      OMP_NUM_THREADS: 1
+    modules: ['gcc', 'openmpi', 'cp2k']
+    cmds:
+      - '{{sched.test_cmd}} cp2k.popt -i cp2k/benchmarks/Fayalite-FIST/fayalite.inp'
+      - '{{sched.test_cmd}} cp2k.popt -i cp2k/benchmarks/QS/H2O-64.inp'
+      # NOTE: H2O-dft-ls test currently segfaults
+      #- '{{sched.test_cmd}} cp2k.popt -i cp2k/benchmarks/QS_DM_LS/H2O-dft-ls.inp'
+  result_parse:
+    regex:
+      result:
+        regex:  '^[[:space:]]*CP2K[[:space:]]'
+        action: store_true
+
