@@ -335,11 +335,24 @@ mathematica:
 #-------------------------------------------------------------------
 cp2k:
   summary: CP2K bennchmark tests
+
+  variables:
+    nodes: 2
+    tasks_per_node: 4
+    tasks: '{{ var.nodes * var.tasks_per_node }}'
+
+  scheduler: slurm
   schedule:
-    nodes: 1
+    nodes: '{{ var.nodes }}'
+    tasks_per_node: '{{ var.tasks_per_node }}'
     slurm:
-      sbatch_extra: ['--exclusive']
+      sbatch_extra: ['--ntasks={{ var.tasks }}', '--tasks-per-node={{ var.tasks_per_node }}', '--constraint="IB&AVX512"']
       mpi_cmd: srun
+      srun_extra: ['--mpi=pmi2']
+  build:
+    source_path: cp2k
+    copy_files:
+      - ./**
   run:
     env:
       I_MPI_PMI_LIBRARY: /opt/software/slurm/lib64/libpmi.so
@@ -347,13 +360,13 @@ cp2k:
       OMP_NUM_THREADS: 1
     modules: ['gcc', 'openmpi', 'cp2k']
     cmds:
-      - '{{sched.test_cmd}} cp2k.popt -i cp2k/benchmarks/Fayalite-FIST/fayalite.inp'
-      - '{{sched.test_cmd}} cp2k.popt -i cp2k/benchmarks/QS/H2O-64.inp'
+      - '{{sched.test_cmd}} cp2k.popt -i benchmarks/Fayalite-FIST/fayalite.inp'
+      - '{{sched.test_cmd}} cp2k.popt -i benchmarks/QS/H2O-64.inp'
       # NOTE: H2O-dft-ls test currently segfaults
-      #- '{{sched.test_cmd}} cp2k.popt -i cp2k/benchmarks/QS_DM_LS/H2O-dft-ls.inp'
+      #- '{{sched.test_cmd}} cp2k.popt -i benchmarks/QS_DM_LS/H2O-dft-ls.inp'
   result_parse:
     regex:
       result:
-        regex:  '^[[:space:]]*CP2K[[:space:]]'
+        regex:  '^\s*CP2K\s+[0-9]'
         action: store_true
 
