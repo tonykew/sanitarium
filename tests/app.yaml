@@ -351,3 +351,30 @@ cp2k:
       result:
         regex:  'CP2K\s+1\s+1.0'
         action: store_true
+
+#-------------------------------------------------------------------
+# blat Test
+#-------------------------------------------------------------------
+blat:
+  summary: Simple blat test
+  build:
+    source_path: blat
+    copy_files:
+    - ./**
+  schedule:
+    nodes: 1
+    slurm:
+  run:
+    modules: ['gcc', 'blat']
+    cmds:
+      - '{{sched.test_cmd}} blat -minScore=0 -stepSize=2 mm39_chr1.2bit mm39_test.fa output.psl'
+#      - 'blat -minScore=0 -stepSize=2 mm39_chr1.fa mm39_test.fa output.psl'
+      - "sed -E '/^psLayout/,/^[-]+[[:space:]]*$/d' output.psl | wc -l"
+  result_parse:
+    regex:
+      matches:
+        regex:  '^(\d+)'
+  result_evaluate:
+        # The test will PASS if there are (any) matches
+        result: 'matches > 0'
+
