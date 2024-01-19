@@ -357,12 +357,15 @@ cp2k:
 #-------------------------------------------------------------------
 quast:
   summary: quast test
+  variables:
+    threads: 8
   build:
     cmds: []
   schedule:
     nodes: 1
     slurm:
-      # TODO - want 8 cores...
+      sbatch_extra: ['--cpus-per-task={{ var.threads }}','--constraint="IB&AVX512"']
+      mpi_cmd: srun
   run:
     env:
       # I don't think this matters, since OpenMPI is not used insofar
@@ -374,7 +377,7 @@ quast:
     cmds:
       # Note: this uses the test data in the quast module
       # --threads defalts to 8
-      - '{{sched.test_cmd}} quast ${EBROOTQUAST}/test_data/contigs_1.fasta  ${EBROOTQUAST}/test_data/contigs_2.fasta -r ${EBROOTQUAST}/test_data/reference.fasta.gz -g ${EBROOTQUAST}/test_data/genes.txt -1 ${EBROOTQUAST}/test_data/reads1.fastq.gz -2 ${EBROOTQUAST}/test_data/reads2.fastq.gz -o .'
+      - '{{sched.test_cmd}} quast --threads {{ var.threads }} ${EBROOTQUAST}/test_data/contigs_1.fasta  ${EBROOTQUAST}/test_data/contigs_2.fasta -r ${EBROOTQUAST}/test_data/reference.fasta.gz -g ${EBROOTQUAST}/test_data/genes.txt -1 ${EBROOTQUAST}/test_data/reads1.fastq.gz -2 ${EBROOTQUAST}/test_data/reads2.fastq.gz -o .'
   result_parse:
     regex:
       # Note: notice messages stored & counted just for info
