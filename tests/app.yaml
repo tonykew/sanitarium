@@ -351,3 +351,54 @@ cp2k:
       result:
         regex:  'CP2K\s+1\s+1.0'
         action: store_true
+
+#-------------------------------------------------------------------
+# quast Test
+#-------------------------------------------------------------------
+quast:
+  summary: quast test
+  build:
+    cmds: []
+  schedule:
+    nodes: 1
+    slurm:
+      # TODO - want 8 cores...
+  run:
+    env:
+      # I don't think this matters, since OpenMPI is not used insofar
+      # as I can tell...
+      I_MPI_PMI_LIBRARY: /opt/software/slurm/lib64/libpmi.so
+      I_MPI_DEBUG: 4
+      OMP_NUM_THREADS: 1
+    modules: ['gcc', 'openmpi', 'quast']
+    cmds:
+      # Note: this uses the test data in the quast module
+      # --threads defalts to 8
+      - '{{sched.test_cmd}} quast ${EBROOTQUAST}/test_data/contigs_1.fasta  ${EBROOTQUAST}/test_data/contigs_2.fasta -r ${EBROOTQUAST}/test_data/reference.fasta.gz -g ${EBROOTQUAST}/test_data/genes.txt -1 ${EBROOTQUAST}/test_data/reads1.fastq.gz -2 ${EBROOTQUAST}/test_data/reads2.fastq.gz -o .'
+  result_parse:
+    regex:
+      # Note: notice messages stored & counted just for info
+      notice_messages:
+        match_select: all
+        regex: '(NOTICE:\s.*$)'
+      notice_count:
+        match_select: 'last'
+        regex: '^NOTICEs:\s+(\d+)'
+      # Note: warning messages stored & counted just for info
+      warning_messages:
+        match_select: all
+        regex: '(WARNING:\s.*$)'
+      warning_count:
+        match_select: 'last'
+        regex: '\sWARNINGs:\s+(\d+)'
+      # error messages messages stored & counted to test for failure
+      error_messages:
+        match_select: all
+        regex: '(ERROR:\s.*$)'
+      error_count:
+        match_select: 'last'
+        regex: '\sERRORs:\s+(\d+)'
+  result_evaluate:
+     # Any error messages are critical
+     result: 'error_count == 0'
+
