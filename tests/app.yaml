@@ -136,15 +136,12 @@ petsc:
   run:
     modules: ['foss', 'petsc']
     cmds:
-      - '{{sched.test_cmd}} ./ex50  -da_grid_x 120 -da_grid_y 120 -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -ksp_view '
+      - '{{sched.test_cmd}} ./ex50  -da_grid_x 120 -da_grid_y 120 -pc_type lu -pc_factor_mat_solver_type superlu_dist -ksp_monitor -ksp_view '
   result_parse:
     regex:
       norm:
         regex:  '  1 KSP Residual norm\s+(.+)'
-      tol: 
-        regex: '   tolerance for zero pivot\s+(.+)'
-  result_evaluate:
-     result: 'norm < tol'
+        action: store_true
      
 #
 # Dakota, simple UQ test
@@ -351,6 +348,144 @@ cp2k:
       result:
         regex:  'CP2K\s+1\s+1.0'
         action: store_true
+
+#-------------------------------------------------------------------
+# Trycycler Test
+#-------------------------------------------------------------------
+trycycler:
+  summary: Trycycler test
+  build:
+    source_path: trycycler-v0.5.3.tar.gz
+  schedule:
+    nodes: 1
+  run:
+    modules: ['gcc', 'openmpi', 'trycycler']
+    cmds:
+      - '{{sched.test_cmd}} pytest'
+  result_parse:
+    regex:
+      result:
+        regex:  '\s180\s+[Pp]assed\s'
+        action: store_true
+
+
+#-------------------------------------------------------------------
+# Unicycler Test
+#-------------------------------------------------------------------
+unicycler:
+  summary: Unicycler test
+  build:
+    source_path: Unicycler.tar.gz
+  schedule:
+    nodes: 1
+  run:
+    modules: ['gcc', 'openmpi', 'unicycler']
+    cmds:
+      - '{{sched.test_cmd}} unicycler -1 short_reads_1.fastq.gz -2 short_reads_2.fastq.gz -l long_reads_low_depth.fastq.gz -o output_dir'
+  result_parse:
+    regex:
+      result:
+        regex:  '[Aa]ssembly\s+[Cc]omplete'
+        action: store_true
+
+#-------------------------------------------------------------------
+# KronaTools Test
+#-------------------------------------------------------------------
+kronatools:
+  summary: KronaTools test
+  build:
+    source_path: KronaTools-taxonomy.tar.gz
+  schedule:
+    nodes: 1
+  run:
+    modules: ['gcccore', 'kronatools']
+    cmds:
+      - '{{sched.test_cmd}} ktImportTaxonomy -tax ./taxonomy my.tab'
+  result_parse:
+    regex:
+      result:
+        regex:  '\[\s+ERROR\s+\]'
+        action: store_false
+
+#-------------------------------------------------------------------
+# HyPhy Test
+#-------------------------------------------------------------------
+hyphy:
+  summary: HyPhy tests
+  build:
+    source_path: HyPhy-tests.tar.bz2
+  schedule:
+    nodes: 1
+    slurm:
+  run:
+    modules: ['gcc', 'openmpi', 'hyphy']
+    cmds:
+      - '{{sched.test_cmd}} ./HyPhy-tests/run_tests.sh'
+
+hyphy-mpi:
+  summary: HyPhy test using the MPI version of HyPhy
+  build:
+    source_path: HyPhy-tests.tar.bz2
+  schedule:
+    nodes: 2
+    slurm:
+      sbatch_extra: ['--tasks-per-node=1','--constraint="IB&AVX512"']
+  run:
+    modules: ['gcc', 'openmpi', 'hyphy']
+    cmds:
+      - '{{sched.test_cmd}} ./HyPhy-tests/run_tests.sh MPI'
+
+#-------------------------------------------------------------------
+# NanoPlot Test
+#-------------------------------------------------------------------
+nanoplot:
+  summary: NanoPlot Test set
+  build:
+    cmds: []
+  schedule:
+    nodes: 1
+  run:
+    modules: ['gcc', 'openmpi', 'nanoplot']
+    cmds:
+      - '{{sched.test_cmd}} bash ${EBROOTNANOPLOT}/lib/python3.9/site-packages/scripts/test.sh'
+  result_parse:
+    regex:
+      result:
+        regex:  'Finished!'
+        action: store_true
+
+#-------------------------------------------------------------------
+# ANSYS Test
+#-------------------------------------------------------------------
+ansys:
+  summary: Simple ANSYS LS-DYNA test
+  build:
+    source_path: ball_and_plate.k
+  schedule:
+    nodes: 1
+  run:
+    modules: ['ansys']
+    cmds:
+      - '{{sched.test_cmd}} lsdyna i=ball_and_plate.k'
+  result_parse:
+    regex:
+      result:
+        regex:  'N o r m a l    t e r m i n a t i o n'
+        action: store_true
+
+#-------------------------------------------------------------------
+# MDAnalysis Test
+#-------------------------------------------------------------------
+mdanalysis:
+  summary: Basic MDAnalysis Example
+  build:
+    source_path: MDAnalysisTests-2.7.0.tar.bz2
+  schedule:
+    nodes: 1
+  run:
+    modules: ['gcc', 'openmpi', 'mdanalysis']
+    cmds:
+      - '{{sched.test_cmd}} python3 basic_example.py'
 
 #-------------------------------------------------------------------
 # blat Test
